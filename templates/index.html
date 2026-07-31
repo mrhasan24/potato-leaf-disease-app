@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potato Disease Detection System</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark app-navbar sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-flower1 me-2"></i>Potato<span class="text-warning">Guard</span> AI
+            </a>
+            <span class="navbar-text d-none d-md-inline small">
+                {% if model_loaded %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Model Online</span>
+                {% else %}
+                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Model Offline</span>
+                {% endif %}
+            </span>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="hero-section text-center text-white">
+        <div class="container py-5">
+            <h1 class="display-5 fw-bold"><i class="bi bi-leaf-fill me-2"></i>AI Potato Disease Detection</h1>
+            <p class="lead mb-0">Upload a potato leaf image and get an instant AI-powered diagnosis</p>
+            <p class="text-white-50 small">BSc Thesis Project &middot; MobileNet Deep Learning Model</p>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        <div class="row justify-content-center g-4">
+
+            <!-- Upload card -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-cloud-upload text-success me-2"></i>Upload Leaf Image
+                        </h5>
+
+                        <div id="dropZone" class="drop-zone text-center mb-3">
+                            <img id="previewImg" src="" alt="Preview" class="img-fluid rounded d-none mb-2">
+                            <div id="dropZonePlaceholder">
+                                <i class="bi bi-image display-4 text-success"></i>
+                                <p class="mb-1 mt-2">Drag &amp; drop an image here</p>
+                                <p class="text-muted small mb-0">or click below to browse (JPG / PNG, max 8MB)</p>
+                            </div>
+                        </div>
+
+                        <input class="form-control" type="file" id="fileInput" accept=".png,.jpg,.jpeg">
+
+                        <button id="predictBtn" class="btn btn-success w-100 mt-3" disabled>
+                            <i class="bi bi-search me-1"></i>Predict Disease
+                        </button>
+
+                        <div id="alertBox" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prediction summary card -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body p-4 d-flex flex-column justify-content-center">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-clipboard2-pulse text-success me-2"></i>Diagnosis Result
+                        </h5>
+
+                        <!-- Loading state -->
+                        <div id="loadingState" class="text-center py-5 d-none">
+                            <div class="spinner-border text-success" style="width:3rem;height:3rem;" role="status"></div>
+                            <p class="mt-3 text-muted">Analyzing leaf image&hellip;</p>
+                        </div>
+
+                        <!-- Empty state -->
+                        <div id="emptyState" class="text-center py-5 text-muted">
+                            <i class="bi bi-hourglass display-4"></i>
+                            <p class="mt-3 mb-0">Upload an image and click "Predict Disease" to see results here.</p>
+                        </div>
+
+                        <!-- Result summary state (no confidence / probability shown) -->
+                        <div id="resultState" class="d-none text-center py-4">
+                            <div id="statusIcon" class="display-3 mb-2"></div>
+                            <span id="statusBadge" class="badge fs-6 mb-2"></span>
+                            <h2 id="diseaseName" class="fw-bold mb-2"></h2>
+                            <p id="diseaseDescription" class="text-muted mb-0"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Detailed recommendation cards (shown only after a prediction) -->
+        <div id="recommendationSection" class="row g-4 mt-1 d-none">
+
+            <div class="col-12">
+                <hr class="my-2">
+                <h4 class="text-success"><i class="bi bi-journal-medical me-2"></i>Recommendation</h4>
+            </div>
+
+            <div id="scientificNameCard" class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100 rec-card">
+                    <div class="card-body p-4">
+                        <h6 class="text-muted text-uppercase small mb-2">🔬 Scientific Name</h6>
+                        <p id="scientificNameText" class="mb-0 fst-italic"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="medicineCard" class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100 rec-card">
+                    <div class="card-body p-4">
+                        <h6 class="text-muted text-uppercase small mb-2">💊 Recommended Medicine</h6>
+                        <p id="medicineText" class="mb-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mixingRatioCard" class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100 rec-card">
+                    <div class="card-body p-4">
+                        <h6 class="text-muted text-uppercase small mb-2">🧪 Mixing Ratio</h6>
+                        <p id="mixingRatioText" class="mb-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="dosageCard" class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100 rec-card">
+                    <div class="card-body p-4">
+                        <h6 class="text-muted text-uppercase small mb-2">🚜 Dosage for 30 Decimal Land</h6>
+                        <p id="dosageText" class="mb-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="treatmentCard" class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100 rec-card">
+                    <div class="card-body p-4">
+                        <h6 class="text-muted text-uppercase small mb-2">🌱 Treatment</h6>
+                        <ul id="treatmentList" class="mb-0 ps-3"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="preventionCard" class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100 rec-card">
+                    <div class="card-body p-4">
+                        <h6 class="text-muted text-uppercase small mb-2">🛡 Prevention</h6>
+                        <ul id="preventionList" class="mb-0 ps-3"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="alert alert-warning d-flex align-items-start mb-0" role="alert">
+                    <span class="fs-4 me-2">⚠</span>
+                    <div>
+                        <strong>Important Note:</strong>
+                        <span id="importantNoteText"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="text-center py-4 mt-5 app-footer">
+        <p class="mb-0 small text-white-50">
+            &copy; 2026 PotatoGuard AI &mdash; BSc Thesis Demonstration Project. Powered by TensorFlow &amp; MobileNet.
+        </p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const previewImg = document.getElementById('previewImg');
+        const dropZonePlaceholder = document.getElementById('dropZonePlaceholder');
+        const predictBtn = document.getElementById('predictBtn');
+        const alertBox = document.getElementById('alertBox');
+
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const resultState = document.getElementById('resultState');
+        const recommendationSection = document.getElementById('recommendationSection');
+
+        let selectedFile = null;
+
+        function showAlert(message) {
+            alertBox.textContent = message;
+            alertBox.classList.remove('d-none');
+        }
+
+        function hideAlert() {
+            alertBox.classList.add('d-none');
+        }
+
+        function handleFile(file) {
+            hideAlert();
+            if (!file) return;
+
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+            if (!validTypes.includes(file.type)) {
+                showAlert('Please select a valid PNG or JPG image.');
+                return;
+            }
+            if (file.size > 8 * 1024 * 1024) {
+                showAlert('File is too large. Maximum size is 8 MB.');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('d-none');
+                dropZonePlaceholder.classList.add('d-none');
+            };
+            reader.readAsDataURL(file);
+
+            predictBtn.disabled = false;
+
+            // Reset result panels when a new image is chosen
+            resultState.classList.add('d-none');
+            recommendationSection.classList.add('d-none');
+            emptyState.classList.remove('d-none');
+        }
+
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        ['dragover', 'dragenter'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drop-zone-active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drop-zone-active');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                handleFile(file);
+            }
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        predictBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            hideAlert();
+
+            emptyState.classList.add('d-none');
+            resultState.classList.add('d-none');
+            recommendationSection.classList.add('d-none');
+            loadingState.classList.remove('d-none');
+            predictBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+
+                loadingState.classList.add('d-none');
+                predictBtn.disabled = false;
+
+                if (!response.ok || !data.success) {
+                    showAlert(data.error || 'Prediction failed. Please try again.');
+                    emptyState.classList.remove('d-none');
+                    return;
+                }
+
+                renderResult(data);
+
+            } catch (err) {
+                loadingState.classList.add('d-none');
+                emptyState.classList.remove('d-none');
+                predictBtn.disabled = false;
+                showAlert('Could not reach the server. Please check the app is running.');
+            }
+        });
+
+        function fillList(ulElement, items) {
+            ulElement.innerHTML = '';
+            (items || []).forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                ulElement.appendChild(li);
+            });
+        }
+
+        function setCardVisibility(cardId, textValue) {
+            const card = document.getElementById(cardId);
+            if (textValue === null || textValue === undefined || textValue === '') {
+                card.classList.add('d-none');
+            } else {
+                card.classList.remove('d-none');
+            }
+        }
+
+        function renderResult(data) {
+            const statusIcon = document.getElementById('statusIcon');
+            const statusBadge = document.getElementById('statusBadge');
+            const diseaseName = document.getElementById('diseaseName');
+            const diseaseDescription = document.getElementById('diseaseDescription');
+
+            const isHealthy = data.status === 'healthy';
+
+            statusIcon.textContent = isHealthy ? '✅' : '🌿';
+            statusBadge.textContent = isHealthy ? 'Healthy' : 'Disease Detected';
+            statusBadge.className = 'badge fs-6 mb-2 ' + (isHealthy ? 'bg-success' : 'bg-danger');
+
+            diseaseName.textContent = data.display_name;
+            diseaseDescription.textContent = data.description;
+
+            resultState.classList.remove('d-none');
+
+            // --- Recommendation cards ---
+            document.getElementById('scientificNameText').textContent = data.scientific_name || 'Not applicable';
+            setCardVisibility('scientificNameCard', data.scientific_name);
+
+            document.getElementById('medicineText').textContent = data.medicine || 'Not applicable';
+            setCardVisibility('medicineCard', data.medicine);
+
+            document.getElementById('mixingRatioText').textContent = data.mixing_ratio_text || 'Not applicable';
+            setCardVisibility('mixingRatioCard', data.mixing_ratio_text);
+
+            document.getElementById('dosageText').textContent = data.dosage_text || 'Not applicable';
+            setCardVisibility('dosageCard', data.dosage_text);
+
+            fillList(document.getElementById('treatmentList'), data.treatment);
+            setCardVisibility('treatmentCard', data.treatment && data.treatment.length ? 'x' : null);
+
+            fillList(document.getElementById('preventionList'), data.prevention);
+            setCardVisibility('preventionCard', data.prevention && data.prevention.length ? 'x' : null);
+
+            document.getElementById('importantNoteText').textContent = data.important_note || '';
+
+            recommendationSection.classList.remove('d-none');
+        }
+    </script>
+</body>
+</html>

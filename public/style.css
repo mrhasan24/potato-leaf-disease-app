@@ -1,0 +1,93 @@
+:root {
+    --brand-green-dark: #1b4332;
+    --brand-green: #2d6a4f;
+    --brand-green-light: #40916c;
+    --brand-green-lighter: #74c69d;
+    --brand-bg: #f4f9f6;
+}
+
+body {
+    background-color: var(--brand-bg);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Navbar */
+.app-navbar {
+    background: linear-gradient(90deg, var(--brand-green-dark), var(--brand-green));
+}
+
+/* Hero */
+.hero-section {
+    background: linear-gradient(135deg, var(--brand-green-dark), var(--brand-green), var(--brand-green-light));
+    box-shadow: inset 0 -10px 20px -10px rgba(0, 0, 0, 0.25);
+}
+
+/* Cards */
+.card {
+    border-radius: 14px;
+}
+
+.card-title {
+    font-weight: 600;
+}
+
+/* Drop zone */
+.drop-zone {
+    border: 2px dashed var(--brand-green-light);
+    border-radius: 12px;
+    padding: 28px 16px;
+    background-color: #f0f7f3;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.drop-zone:hover,
+.drop-zone-active {
+    background-color: #e2f3e8;
+    border-color: var(--brand-green-dark);
+}
+
+.drop-zone img#previewImg {
+    max-height: 260px;
+    object-fit: contain;
+}
+
+/* Buttons */
+.btn-success {
+    background-color: var(--brand-green);
+    border-color: var(--brand-green);
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: var(--brand-green-dark);
+    border-color: var(--brand-green-dark);
+}
+
+.btn-success:disabled {
+    background-color: #a8c5b4;
+    border-color: #a8c5b4;
+}
+
+/* Footer */
+.app-footer {
+    background-color: var(--brand-green-dark);
+}
+
+/* Result panel */
+#diseaseName {
+    color: var(--brand-green-dark);
+}
+
+/* Recommendation cards */
+.rec-card {
+    border-left: 4px solid var(--brand-green-light) !important;
+    transition: transform 0.15s ease-in-out;
+}
+
+.rec-card:hover {
+    transform: translateY(-2px);
+}
+
+.rec-card ul {
+    line-height: 1.7;
+}
