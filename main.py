@@ -22,7 +22,7 @@ import numpy as np
 import cv2
 import base64
 from ai_edge_litert.interpreter import Interpreter
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 
 # --------------------------------------------------------------------------
 # Configuration
@@ -287,6 +287,9 @@ logger = logging.getLogger("potato_disease_app")
 # Flask app setup
 # --------------------------------------------------------------------------
 app = Flask(__name__)
+
+app.secret_key = "your-secret-key-change-this"
+
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 
 # --------------------------------------------------------------------------
@@ -376,9 +379,19 @@ def bytes_to_data_uri(file_bytes: bytes, mimetype: str) -> str:
 # --------------------------------------------------------------------------
 # Routes
 # --------------------------------------------------------------------------
+# @app.route("/")
+# def index():
+#     return render_template("index.html", model_loaded=interpreter is not None)
+
 @app.route("/")
 def index():
-    return render_template("index.html", model_loaded=interpreter is not None)
+    language = session.get("language", "bn")
+
+    return render_template(
+        "index.html",
+        model_loaded=interpreter is not None,
+        language=language
+    )
 
 
 @app.route("/predict", methods=["POST"])
@@ -432,6 +445,13 @@ def not_found(_error):
 @app.errorhandler(500)
 def server_error(_error):
     return jsonify({"success": False, "error": "Internal server error."}), 500
+
+@app.route("/set-language/<language>")
+def set_language(language):
+    if language in ["en", "bn"]:
+        session["language"] = language
+
+    return redirect(request.referrer or url_for("index"))
 
 
 if __name__ == "__main__":
